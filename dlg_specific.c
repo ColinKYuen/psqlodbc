@@ -23,6 +23,8 @@
 
 #include "pgapifunc.h"
 
+#include "dsts_secure_sscanf.h"
+
 #define	NULL_IF_NULL(a) ((a) ? ((const char *)(a)) : "(null)")
 CSTR	ENTRY_TEST = " @@@ ";
 
@@ -103,6 +105,7 @@ BOOL	setExtraOptions(ConnInfo *ci, const char *optstr, const char *format)
 {
 	UInt4	flag = 0, cnt;
 	char	dummy[2];
+	int		status = 0;
 
 	if (!format)
 	{
@@ -127,7 +130,8 @@ BOOL	setExtraOptions(ConnInfo *ci, const char *optstr, const char *format)
 			format = dec_format;
 	}
 
-	if (cnt = sscanf(optstr, format, &flag, dummy), cnt < 1) // format error
+	if (cnt = dsts_secure_sscanf(optstr, status, format,
+				DSTS_ARG_INT(&flag), DSTS_ARG_STR(&dummy, sizeof(dummy))), cnt < 1) // format error
 		return FALSE;
 	else if (cnt > 1) // format error
 		return FALSE;
@@ -543,21 +547,22 @@ MYLOG(DETAIL_LOG_LEVEL, "hlen=" FORMAT_SSIZE_T "\n", hlen);
 static void
 unfoldCXAttribute(ConnInfo *ci, const char *value)
 {
-	int	count;
+	int		count;
 	UInt4	flag;
+	int		status = 0;
 
 	if (strlen(value) < 2)
 	{
 		count = 3;
-		sscanf(value, "%x", &flag);
+		dsts_secure_sscanf(value, status, "%x", DSTS_ARG_INT(&flag));
 	}
 	else
 	{
 		char	cnt[8];
 		memcpy(cnt, value, 2);
 		cnt[2] = '\0';
-		sscanf(cnt, "%x", &count);
-		sscanf(value + 2, "%x", &flag);
+		dsts_secure_sscanf(cnt, status, "%x", DSTS_ARG_INT(&count));
+		dsts_secure_sscanf(value + 2, status, "%x", DSTS_ARG_INT(&flag));
 	}
 	ci->allow_keyset = (char)((flag & BIT_UPDATABLECURSORS) != 0);
 	ci->lf_conversion = (char)((flag & BIT_LFCONVERSION) != 0);
@@ -750,15 +755,17 @@ copyConnAttributes(ConnInfo *ci, const char *attribute, const char *value)
 	else if (stricmp(attribute, INI_EXTRAOPTIONS) == 0)
 	{
 		UInt4	val1 = 0, val2 = 0;
+		int		status = 0;
 
 		if ('+' == value[0])
 		{
-			sscanf(value + 1, "%x-%x", &val1, &val2);
+			dsts_secure_sscanf(value + 1, status, "%x-%x",
+				DSTS_ARG_INT(&val1), DSTS_ARG_INT(&val2));
 			add_removeExtraOptions(ci, val1, val2);
 		}
 		else if ('-' == value[0])
 		{
-			sscanf(value + 1, "%x", &val2);
+			dsts_secure_sscanf(value + 1, status, "%x", DSTS_ARG_INT(&val2));
 			add_removeExtraOptions(ci, 0, val2);
 		}
 		else
@@ -918,7 +925,7 @@ void
 getDSNinfo(ConnInfo *ci, const char *configDrvrname)
 {
 	char	   *DSN = ci->dsn;
-	char	temp[LARGE_REGISTRY_LEN];
+	char		temp[LARGE_REGISTRY_LEN];
 	const char *drivername;
 
 /*
@@ -1106,8 +1113,9 @@ MYLOG(0, "drivername=%s\n", drivername);
 					temp, sizeof(temp), ODBC_INI) > 0)
 	{
 		UInt4	val = 0;
+		int 	status = 0;
 
-		sscanf(temp, "%x", &val);
+		dsts_secure_sscanf(temp, status, "%x", DSTS_ARG_INT(&val));
 		replaceExtraOptions(ci, val, TRUE);
 		MYLOG(0, "force_abbrev=%d bde=%d cvt_null_date=%d\n", ci->force_abbrev_connstr, ci->bde_environment, ci->cvt_null_date_string);
 	}

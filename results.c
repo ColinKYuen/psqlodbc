@@ -33,6 +33,8 @@
 
 #include "pgapifunc.h"
 
+#include "dsts_secure_sscanf.h"
+
 /*	Helper macro */
 #define getEffectiveOid(conn, fi) pg_true_type((conn), (fi)->columntype, FI_type(fi))
 #define	NULL_IF_NULL(a) ((a) ? ((const char *)(a)) : "(null)")
@@ -2109,18 +2111,19 @@ static void getTid(const QResultClass *res, SQLLEN index, UInt4 *blocknum, UInt2
 }
 static void KeySetSet(const TupleField *tuple, int num_fields, int num_key_fields, KeySet *keyset, BOOL statusInit)
 {
+	int status = 0;
 	if (statusInit)
 		keyset->status = 0;
-	sscanf(tuple[num_fields - num_key_fields].value, "(%u,%hu)",
-			&keyset->blocknum, &keyset->offset);
+	dsts_secure_sscanf(tuple[num_fields - num_key_fields].value, status, "(%u,%hu)",
+		DSTS_ARG_UINT(&(keyset->blocknum)), DSTS_ARG_USHORT(&(keyset->offset)));
 	if (num_key_fields > 1)
 	{
 		const char *oval = tuple[num_fields - 1].value;
 
 		if ('-' == oval[0])
-			sscanf(oval, "%d", &keyset->oid);
+			dsts_secure_sscanf(oval, status, "%d", DSTS_ARG_INT(&(keyset->oid)));
 		else
-			sscanf(oval, "%u", &keyset->oid);
+			dsts_secure_sscanf(oval, status, "%u", DSTS_ARG_UINT(&(keyset->oid)));
 	}
 	else
 		keyset->oid = 0;
@@ -3918,8 +3921,9 @@ irow_update(RETCODE ret, StatementClass *stmt, StatementClass *ustmt, SQLULEN gl
 		QResultClass		*tres = SC_get_Curres(ustmt);
 		const char *cmdstr = QR_get_command(tres);
 
+		int status = 0;
 		if (cmdstr &&
-			sscanf(cmdstr, "UPDATE %d", &updcnt) == 1)
+			dsts_secure_sscanf(cmdstr, status, "UPDATE %d", DSTS_ARG_INT(&updcnt)) == 1)
 		{
 			if (updcnt == 1)
 			{
@@ -4335,8 +4339,9 @@ SC_pos_delete(StatementClass *stmt,
 		int			dltcnt;
 		const char *cmdstr = QR_get_command(qres);
 
+		int status = 0;
 		if (cmdstr &&
-			sscanf(cmdstr, "DELETE %d", &dltcnt) == 1)
+			dsts_secure_sscanf(cmdstr, status, "DELETE %d", DSTS_ARG_INT(&dltcnt)) == 1)
 		{
 			if (dltcnt == 1)
 			{
@@ -4429,8 +4434,11 @@ irow_insert(RETCODE ret, StatementClass *stmt, StatementClass *istmt,
 
 		tres = (QR_nextr(ires) ? QR_nextr(ires) : ires);
 		cmdstr = QR_get_command(tres);
+
+		int status = 0;
 		if (cmdstr &&
-			sscanf(cmdstr, "INSERT %u %d", &oid, &addcnt) == 2 &&
+			dsts_secure_sscanf(cmdstr, status, "INSERT %u %d",
+				DSTS_ARG_UINT(&oid), DSTS_ARG_INT(&addcnt)) == 2 &&
 			addcnt == 1)
 		{
 			RETCODE	qret;
