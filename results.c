@@ -2114,16 +2114,16 @@ static void KeySetSet(const TupleField *tuple, int num_fields, int num_key_field
 	int status = 0;
 	if (statusInit)
 		keyset->status = 0;
-	secure_sscanf(tuple[num_fields - num_key_fields].value, status, "(%u,%hu)",
+	secure_sscanf(tuple[num_fields - num_key_fields].value, &status, "(%u,%hu)",
 		ARG_UINT(&(keyset->blocknum)), ARG_USHORT(&(keyset->offset)));
 	if (num_key_fields > 1)
 	{
 		const char *oval = tuple[num_fields - 1].value;
 
 		if ('-' == oval[0])
-			secure_sscanf(oval, status, "%d", ARG_INT(&(keyset->oid)));
+			secure_sscanf(oval, &status, "%d", ARG_INT(&(keyset->oid)));
 		else
-			secure_sscanf(oval, status, "%u", ARG_UINT(&(keyset->oid)));
+			secure_sscanf(oval, &status, "%u", ARG_UINT(&(keyset->oid)));
 	}
 	else
 		keyset->oid = 0;
@@ -3923,7 +3923,7 @@ irow_update(RETCODE ret, StatementClass *stmt, StatementClass *ustmt, SQLULEN gl
 
 		int status = 0;
 		if (cmdstr &&
-			secure_sscanf(cmdstr, status, "UPDATE %d", ARG_INT(&updcnt)) == 1)
+			secure_sscanf(cmdstr, &status, "UPDATE %d", ARG_INT(&updcnt)) == 1)
 		{
 			if (updcnt == 1)
 			{
@@ -4341,7 +4341,7 @@ SC_pos_delete(StatementClass *stmt,
 
 		int status = 0;
 		if (cmdstr &&
-			secure_sscanf(cmdstr, status, "DELETE %d", ARG_INT(&dltcnt)) == 1)
+			secure_sscanf(cmdstr, &status, "DELETE %d", ARG_INT(&dltcnt)) == 1)
 		{
 			if (dltcnt == 1)
 			{
@@ -4437,7 +4437,7 @@ irow_insert(RETCODE ret, StatementClass *stmt, StatementClass *istmt,
 
 		int status = 0;
 		if (cmdstr &&
-			secure_sscanf(cmdstr, status, "INSERT %u %d",
+			secure_sscanf(cmdstr, &status, "INSERT %u %d",
 				ARG_UINT(&oid), ARG_INT(&addcnt)) == 2 &&
 			addcnt == 1)
 		{

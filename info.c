@@ -5370,7 +5370,7 @@ MYLOG(0, "atttypid=%s\n", atttypid ? atttypid : "(null)");
 					else
 					{
 						int status = 0;
-						secure_sscanf(params, status, "%u", ARG_UINT(&pgtype));
+						secure_sscanf(params, &status, "%u", ARG_UINT(&pgtype));
 						while (isdigit((unsigned char) *params))
 							params++;
 					}

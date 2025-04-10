@@ -929,7 +929,7 @@ SQLLEN	QR_move_cursor_to_last(QResultClass *self, StatementClass *stmt)
 	}
 	moved = (-1);
 	int status = 0;
-	if (secure_sscanf(res->command, status, "MOVE " FORMAT_ULEN, ARG_ULONG(&moved)) > 0)
+	if (secure_sscanf(res->command, &status, "MOVE " FORMAT_ULEN, ARG_ULONG(&moved)) > 0)
 	{
 		moved++;
 		self->cursTuple += moved;
@@ -1029,7 +1029,7 @@ MYLOG(DETAIL_LOG_LEVEL, "cache=" FORMAT_ULEN " rowset=%d movement=" FORMAT_ULEN 
 		}
 		moved = movement;
 		int status = 0;
-		if (secure_sscanf(mres->command, status, "MOVE " FORMAT_ULEN, ARG_ULONG(&moved)) > 0)
+		if (secure_sscanf(mres->command, &status, "MOVE " FORMAT_ULEN, ARG_ULONG(&moved)) > 0)
 		{
 MYLOG(DETAIL_LOG_LEVEL, "moved=" FORMAT_ULEN " ? " FORMAT_ULEN "\n", moved, movement);
 			if (moved < movement)
@@ -1427,7 +1427,7 @@ nextrow:
 					}
 					int status = 0;
 					if (field_lf == effective_cols)
-						secure_sscanf(buffer, status, "(%u,%hu)",
+						secure_sscanf(buffer, &status, "(%u,%hu)",
 							ARG_UINT(&this_keyset->blocknum),
 							ARG_USHORT(&this_keyset->offset));
 					else

@@ -97,7 +97,7 @@
 #include <math.h>
 #include <limits.h>
 
-#include "secure_sscanf.h" 
+#include "secure_sscanf.h"
 
 ALWAYS_INLINE char *
 skip_spaces(const char *pInputString)
@@ -447,7 +447,7 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
             }
 
             if (cbSize) {
-                memset(pOutput, '\0', cbSize);
+                memset(pOutput, '\0', useTrim ? uWidth : cbSize);
                 cbSize--;
                 while (pCurrent[0] != '\0' && !isspace(pCurrent[0]) && cbSize != 0 && (useTrim ? uWidth-- > 0 : 1)) {
                     #ifdef _MSC_VER

@@ -648,9 +648,9 @@ MYLOG(0, "count_of_deffered=%d has_notice=%d\n", count_of_deferred, stmt->has_no
 			int     count;
 			int		status = 0;
 
-			if (secure_sscanf(cmd, status, "UPDATE %d", ARG_INT(&count)) == 1)
+			if (secure_sscanf(cmd, &status, "UPDATE %d", ARG_INT(&count)) == 1)
 				;
-			else if (secure_sscanf(cmd, status, "DELETE %d", ARG_INT(&count)) == 1)
+			else if (secure_sscanf(cmd, &status, "DELETE %d", ARG_INT(&count)) == 1)
 				;
 			else
 				count = -1;
