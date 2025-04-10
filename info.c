@@ -41,7 +41,7 @@
 #include "multibyte.h"
 #include "catfunc.h"
 
-#include "dsts_secure_sscanf.h"
+#include "secure_sscanf.h"
 
 /*	Trigger related stuff for SQLForeign Keys */
 #define TRIGGER_SHIFT 3
@@ -5370,7 +5370,7 @@ MYLOG(0, "atttypid=%s\n", atttypid ? atttypid : "(null)");
 					else
 					{
 						int status = 0;
-						dsts_secure_sscanf(params, status, "%u", DSTS_ARG_UINT(&pgtype));
+						secure_sscanf(params, status, "%u", ARG_UINT(&pgtype));
 						while (isdigit((unsigned char) *params))
 							params++;
 					}

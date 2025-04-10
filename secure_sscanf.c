@@ -1,31 +1,42 @@
-/* **********************************************************************************
- * AUTHOR: vaneeden
- * Copyright (C) 2024 Amazon.com All Rights Reserved
- * **********************************************************************************/
+//  Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+//
+//  This library is free software; you can redistribute it and/or
+//  modify it under the terms of the GNU Library General Public
+//  License as published by the Free Software Foundation; either
+//  version 2 of the License, or (at your option) any later version.
+//
+//  This library is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+//  Library General Public License for more details.
+//
+//  You should have received a copy of the GNU Library General Public
+//  License along with this library; if not, write to the Free Software
+//  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
 /** 
 * NAME 
-*    dsts_secure_sscanf - secure replacement for sscanf()
+*    secure_sscanf - secure replacement for sscanf()
 * 
 * SYNOPSIS 
-*    #include "dsts_secure_sscanf.h"
+*    #include "secure_sscanf.h"
 *
 *    int 
-*    dsts_secure_sscanf(const char *pInputString, int *pStatus, const char *pFmt, ... ) 
+*    secure_sscanf(const char *pInputString, int *pStatus, const char *pFmt, ... ) 
 * 
 * DESCRIPTION 
-*    The dsts_secure_sscanf() function is a secure replacement for sscanf(). It
+*    The secure_sscanf() function is a secure replacement for sscanf(). It
 *    scans formatted input from the string str according to the format string
-*    format, as described in the FORMATS section below. dsts_secure_sscanf()
+*    format, as described in the FORMATS section below. secure_sscanf()
 *    differs from sscanf() in the following ways:
 *
-*    1. Types are passed using DSTS_ARG_TYPE() macros.
+*    1. Types are passed using ARG_TYPE() macros.
 *    2. Output values are initialized even on errors.
 *    3. Numeric conversion errors will be propagated.
 *    4. The '%s' format specifier takes an additional argument, a size_t of the
 *       destination buffer.
 *    5. Output is guaranteed to be \0 terminated.
-*    6. Max string output is capped to DSTS_MAX_STRING_OUTPUT (4 * PAGE_SIZE).
+*    6. Max string output is capped to MAX_STRING_OUTPUT (4 * PAGE_SIZE).
 * 
 * FORMATS
 *    The format string is composed of zero or more directives: one or more
@@ -43,33 +54,33 @@
 * 
 *    The arguments for the format string specifiers are passed through the following macros:
 *
-*    DSTS_ARG_STR(&buf, sizeof(buf)) for strings (%s)
-*    DSTS_ARG_INT(&int1) for integers (%d, %u, %x)
-*    DSTS_ARG_FLOAT(&float1) for floats (%f)
-*    DSTS_ARG_CHAR(&char1) for char (%c)
+*    ARG_STR(&buf, sizeof(buf)) for strings (%s)
+*    ARG_INT(&int1) for integers (%d, %u, %x)
+*    ARG_FLOAT(&float1) for floats (%f)
+*    ARG_CHAR(&char1) for char (%c)
 
 * RETURN VALUE
-*    The dsts_secure_sscanf() function returns the number of input items
+*    The secure_sscanf() function returns the number of input items
 *    successfully matched and assigned; this can be fewer than provided for,
 *    or even zero, in the event of an early matching failure between the input
 *    string and a directive.
 *
 *    The pStatus argument will be set to one of the following values:
 *
-*    DSTS_ERROR_SUCCESS
-*    DSTS_ERROR_NUMERIC_CONVERSION
-*    DSTS_ERROR_BUFFER_TOO_SMALL
-*    DSTS_ERROR_INVALID_FMT
-*    DSTS_ERROR_INVALID_TYPE 
+*    ERROR_SUCCESS
+*    ERROR_NUMERIC_CONVERSION
+*    ERROR_BUFFER_TOO_SMALL
+*    ERROR_INVALID_FMT
+*    ERROR_INVALID_TYPE 
 *
 * EXAMPLES
 *
-*    ret = dsts_secure_sscanf(pInput, &status, "%s %f %c", 
-*                                              DSTS_ARG_STR(&string1, sizeof(string1)),
-*                                              DSTS_ARG_FLOAT(&float1),
-*                                              DSTS_ARG_CHAR(&char1));
+*    ret = secure_sscanf(pInput, &status, "%s %f %c", 
+*                                              ARG_STR(&string1, sizeof(string1)),
+*                                              ARG_FLOAT(&float1),
+*                                              ARG_CHAR(&char1));
 *
-*    if (ret != 3 || status != DSTS_ERROR_SUCCESS)
+*    if (ret != 3 || status != ERROR_SUCCESS)
 *        // handle error
 *
 * SEE ALSO 
@@ -86,7 +97,7 @@
 #include <math.h>
 #include <limits.h>
 
-#include "dsts_secure_sscanf.h" 
+#include "secure_sscanf.h" 
 
 ALWAYS_INLINE char *
 skip_spaces(const char *pInputString)
@@ -103,7 +114,7 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
 {
     const char *pCurrent                    = pInputString;
     const char *pParse                      = pInputString;
-    char trimCurr[DSTS_MAX_STRING_OUTPUT]   = { 0 };
+    char trimCurr[MAX_STRING_OUTPUT]        = { 0 };
 
     char *pEnd                              = NULL;
     char *pFmtEnd                           = NULL;
@@ -124,12 +135,12 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
     unsigned int uWidth                     = 0;
     unsigned char useTrim                   = 0;
 
-    DSTS_PUT_VALUE(pError, DSTS_ERROR_SUCCESS);
+    PUT_VALUE(pError, ERROR_SUCCESS);
 
     lRet = strtol(pFmt, &pFmtEnd, 10);
 
     if (((lRet == HUGE_VALF || lRet == -HUGE_VALF) && (errno == ERANGE)) || (lRet > UINT_MAX)) {
-        DSTS_PUT_VALUE(pError, DSTS_ERROR_INVALID_FMT);
+        PUT_VALUE(pError, ERROR_INVALID_FMT);
         return pCurrent;
     }
 
@@ -147,24 +158,24 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
 
     iType = va_arg(*args, int);
 
-    long spType = DSTS_TYPE_DEFAULT;
+    long spType = TYPE_DEFAULT;
     switch (*pFmt) {
         case 'h':
             pFmt++;
             if (*pFmt == 'h') {
                 pFmt++;
-                spType = DSTS_TYPE_CHAR;
+                spType = TYPE_CHAR;
             } else {
-                spType = DSTS_TYPE_SHORT;
+                spType = TYPE_SHORT;
             }
             break;
         case 'l':
             pFmt++;
             if (*pFmt == 'l') {
                 pFmt++;
-                spType = DSTS_TYPE_LLONG;
+                spType = TYPE_LLONG;
             } else {
-                spType = DSTS_TYPE_LONG;
+                spType = TYPE_LONG;
             }
             break;
         default:
@@ -174,13 +185,13 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
     switch (*pFmt) {
         case 'f':
 
-            DSTS_VALIDATE_FMT_TYPE(DSTS_TYPE_FLOAT);
+            VALIDATE_FMT_TYPE(TYPE_FLOAT);
             pOutput = (void *)va_arg(*args, float *);
-            DSTS_PUT_VALUE((float *)pOutput, 0.0f);
+            PUT_VALUE((float *)pOutput, 0.0f);
 
             fRet = strtof(pParse, &pEnd);
             if (pEnd == pParse) {
-                DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                 return skip_spaces(pCurrent);
             }
 
@@ -194,11 +205,11 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
             }
 
             if (((fRet == HUGE_VALF || fRet == -HUGE_VALF)) && (errno == ERANGE)) {
-                DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                 return skip_spaces(pCurrent);
             }
 
-            DSTS_PUT_VALUE((float *)pOutput, fRet);
+            PUT_VALUE((float *)pOutput, fRet);
             break;
 
         case 'i':   
@@ -209,45 +220,45 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
                     iBase = 8;
                 }
             }
-            DSTS_FALL_THROUGH;
+            FALL_THROUGH;
 
         case 'd':
-            DSTS_VALIDATE_FMT_TYPE(spType == DSTS_TYPE_DEFAULT ? DSTS_TYPE_INT : spType);
+            VALIDATE_FMT_TYPE(spType == TYPE_DEFAULT ? TYPE_INT : spType);
             switch (spType) {
-                case DSTS_TYPE_CHAR:
+                case TYPE_CHAR:
                     pOutput = (void *)va_arg(*args, char *);
-                    DSTS_PUT_VALUE((char *)pOutput, 0);
+                    PUT_VALUE((char *)pOutput, 0);
                     lRet = strtol(pParse, &pEnd, iBase);
                     break;
 
-                case DSTS_TYPE_SHORT:
+                case TYPE_SHORT:
                     pOutput = (void *)va_arg(*args, short *);
-                    DSTS_PUT_VALUE((short *)pOutput, 0);
+                    PUT_VALUE((short *)pOutput, 0);
                     lRet = strtol(pParse, &pEnd, iBase);
                     break;
 
-                case DSTS_TYPE_LONG:
+                case TYPE_LONG:
                     pOutput = (void *)va_arg(*args, long *);
-                    DSTS_PUT_VALUE((long *)pOutput, 0);
+                    PUT_VALUE((long *)pOutput, 0);
                     lRet = strtol(pParse, &pEnd, iBase);
                     break;
 
-                case DSTS_TYPE_LLONG:
+                case TYPE_LLONG:
                     pOutput = (void *)va_arg(*args, long long *);
-                    DSTS_PUT_VALUE((long long *)pOutput, 0);
+                    PUT_VALUE((long long *)pOutput, 0);
                     llRet = strtoll(pParse, &pEnd, iBase);
                     break;
 
-                case DSTS_TYPE_DEFAULT:
-                    DSTS_FALL_THROUGH;
+                case TYPE_DEFAULT:
+                    FALL_THROUGH;
                 default:
                     pOutput = (void *)va_arg(*args, unsigned int *);
-                    DSTS_PUT_VALUE((int *)pOutput, 0);
+                    PUT_VALUE((int *)pOutput, 0);
                     lRet = strtol(pParse, &pEnd, iBase);
             }
 
             if (pEnd == pParse) {
-                DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                 return skip_spaces(pCurrent);
             }
 
@@ -261,100 +272,100 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
             }
 
             if ((lRet == HUGE_VAL) && (errno == ERANGE)) {
-                DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                 return skip_spaces(pCurrent);
             }
 
             switch (spType) {
-                    case DSTS_TYPE_CHAR:
+                    case TYPE_CHAR:
                         if (lRet > CHAR_MAX) {
-                            DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                            PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                             return skip_spaces(pCurrent);
                         }
-                        DSTS_PUT_VALUE((char *)pOutput, lRet);
+                        PUT_VALUE((char *)pOutput, lRet);
                         break;
 
-                    case DSTS_TYPE_SHORT:
+                    case TYPE_SHORT:
                         if (lRet > SHRT_MAX) {
-                            DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                            PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                             return skip_spaces(pCurrent);
                         }
-                        DSTS_PUT_VALUE((short *)pOutput, lRet);
+                        PUT_VALUE((short *)pOutput, lRet);
                         break;
 
-                    case DSTS_TYPE_LONG:
+                    case TYPE_LONG:
                         if (lRet > LONG_MAX) {
-                            DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                            PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                             return skip_spaces(pCurrent);
                         }
-                        DSTS_PUT_VALUE((long *)pOutput, lRet);
+                        PUT_VALUE((long *)pOutput, lRet);
                         break;
 
-                    case DSTS_TYPE_LLONG:
+                    case TYPE_LLONG:
                         if (llRet > LLONG_MAX) {
-                            DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                            PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                             return skip_spaces(pCurrent);
                         }
-                        DSTS_PUT_VALUE((long long *)pOutput, llRet);
+                        PUT_VALUE((long long *)pOutput, llRet);
                         break;
 
-                    case DSTS_TYPE_DEFAULT:
-                        DSTS_FALL_THROUGH;
+                    case TYPE_DEFAULT:
+                        FALL_THROUGH;
                     default:
                         if (lRet > INT_MAX) {
-                            DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                            PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                             return skip_spaces(pCurrent);
                         }
-                        DSTS_PUT_VALUE((int *)pOutput, lRet);
+                        PUT_VALUE((int *)pOutput, lRet);
             }
             break;
 
         case 'X':
-            DSTS_FALL_THROUGH;
+            FALL_THROUGH;
 
         case 'x':
             iBase = 16;
-            DSTS_FALL_THROUGH;
+            FALL_THROUGH;
 
         case 'u':
             // Up by 1 to "unsigned" type
-            unsigned long type = spType == DSTS_TYPE_DEFAULT ? DSTS_TYPE_UINT : spType + 1;
-            DSTS_VALIDATE_FMT_TYPE(type);
+            unsigned long type = spType == TYPE_DEFAULT ? TYPE_UINT : spType + 1;
+            VALIDATE_FMT_TYPE(type);
             switch (type) {
-                case DSTS_TYPE_UCHAR:
+                case TYPE_UCHAR:
                     pOutput = (void *)va_arg(*args, unsigned char *);
-                    DSTS_PUT_VALUE((unsigned char *)pOutput, 0);
+                    PUT_VALUE((unsigned char *)pOutput, 0);
                     ulRet = strtoul(pParse, &pEnd, iBase);
                     break;
 
-                case DSTS_TYPE_USHORT:
+                case TYPE_USHORT:
                     pOutput = (void *)va_arg(*args, unsigned short *);
-                    DSTS_PUT_VALUE((unsigned short *)pOutput, 0);
+                    PUT_VALUE((unsigned short *)pOutput, 0);
                     ulRet = strtoul(pParse, &pEnd, iBase);
                     break;
 
-                case DSTS_TYPE_ULONG:
+                case TYPE_ULONG:
                     pOutput = (void *)va_arg(*args, unsigned long *);
-                    DSTS_PUT_VALUE((unsigned long *)pOutput, 0);
+                    PUT_VALUE((unsigned long *)pOutput, 0);
                     ulRet = strtoul(pParse, &pEnd, iBase);
                     break;
 
-                case DSTS_TYPE_ULLONG:
+                case TYPE_ULLONG:
                     pOutput = (void *)va_arg(*args, unsigned long long *);
-                    DSTS_PUT_VALUE((unsigned long long *)pOutput, 0);
+                    PUT_VALUE((unsigned long long *)pOutput, 0);
                     ullRet = strtoull(pParse, &pEnd, iBase);
                     break;
 
-                case DSTS_TYPE_DEFAULT:
-                    DSTS_FALL_THROUGH;
+                case TYPE_DEFAULT:
+                    FALL_THROUGH;
                 default:
                     pOutput = (void *)va_arg(*args, unsigned int *);
-                    DSTS_PUT_VALUE((unsigned int *)pOutput, 0);
+                    PUT_VALUE((unsigned int *)pOutput, 0);
                     ulRet = strtoul(pParse, &pEnd, iBase);
             }
 
             if (pEnd == pCurrent) {
-                DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                 return skip_spaces(pCurrent);
             }
 
@@ -368,70 +379,70 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
             }
 
             if ((ulRet == HUGE_VAL) && (errno == ERANGE)) {
-                DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                 return skip_spaces(pCurrent);
             }
 
             switch (type) {
-                case DSTS_TYPE_UCHAR:
+                case TYPE_UCHAR:
                     if (ulRet > UCHAR_MAX) {
-                        DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                        PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                         return skip_spaces(pCurrent);
                     }
-                    DSTS_PUT_VALUE((unsigned char *)pOutput, ulRet);
+                    PUT_VALUE((unsigned char *)pOutput, ulRet);
                     break;
 
-                case DSTS_TYPE_USHORT:
+                case TYPE_USHORT:
                     if (ulRet > USHRT_MAX) {
-                        DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                        PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                         return skip_spaces(pCurrent);
                     }
-                    DSTS_PUT_VALUE((unsigned short *)pOutput, ulRet);
+                    PUT_VALUE((unsigned short *)pOutput, ulRet);
                     break;
 
-                case DSTS_TYPE_ULONG:
+                case TYPE_ULONG:
                     if (ulRet > ULONG_MAX) {
-                        DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                        PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                         return skip_spaces(pCurrent);
                     }
-                    DSTS_PUT_VALUE((unsigned long *)pOutput, ulRet);
+                    PUT_VALUE((unsigned long *)pOutput, ulRet);
                     break;
 
-                case DSTS_TYPE_ULLONG:
+                case TYPE_ULLONG:
                     if (ullRet > ULLONG_MAX) {
-                        DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                        PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                         return skip_spaces(pCurrent);
                     }
-                    DSTS_PUT_VALUE((unsigned long long *)pOutput, ullRet);
+                    PUT_VALUE((unsigned long long *)pOutput, ullRet);
                     break;
 
-                case DSTS_TYPE_DEFAULT:
-                    DSTS_FALL_THROUGH;
+                case TYPE_DEFAULT:
+                    FALL_THROUGH;
                 default:
                     if (lRet > UINT_MAX) {
-                        DSTS_PUT_VALUE(pError, DSTS_ERROR_NUMERIC_CONVERSION);
+                        PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
                         return skip_spaces(pCurrent);
                     }
-                    DSTS_PUT_VALUE((unsigned int *)pOutput, ulRet);
+                    PUT_VALUE((unsigned int *)pOutput, ulRet);
             }
             break;
 
         case 'c':
-            DSTS_VALIDATE_FMT_TYPE(DSTS_TYPE_CHAR);
+            VALIDATE_FMT_TYPE(TYPE_CHAR);
             pOutput = (void *)va_arg(*args, unsigned char *);
-            DSTS_PUT_VALUE((char *)pOutput, *pInputString);
+            PUT_VALUE((char *)pOutput, *pInputString);
             break;
 
         case 's':
-            DSTS_VALIDATE_FMT_TYPE(DSTS_TYPE_STRING);
+            VALIDATE_FMT_TYPE(TYPE_STRING);
             pOutput = (void *)va_arg(*args, char *);
             cbSize  = va_arg(*args, size_t);
 
             if (!pOutput)
                 return pCurrent;
 
-            if (cbSize > DSTS_MAX_STRING_OUTPUT) {
-                DSTS_PUT_VALUE(pError, DSTS_ERROR_BUFFER_TOO_SMALL);
+            if (cbSize > MAX_STRING_OUTPUT) {
+                PUT_VALUE(pError, ERROR_BUFFER_TOO_SMALL);
                 return pCurrent;
             }
 
@@ -457,7 +468,7 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
             break;
 
         default:
-            DSTS_PUT_VALUE(pError, DSTS_ERROR_INVALID_FMT);
+            PUT_VALUE(pError, ERROR_INVALID_FMT);
             return pCurrent;
     }
 
@@ -465,7 +476,7 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
 }
 
 int
-dsts_secure_sscanf(const char *pInputString, int *pStatus, const char *pFmt, ... )
+secure_sscanf(const char *pInputString, int *pStatus, const char *pFmt, ... )
 {
     const char *pFmtEnd = NULL;
 
@@ -475,7 +486,7 @@ dsts_secure_sscanf(const char *pInputString, int *pStatus, const char *pFmt, ...
     if (!pInputString || !pFmt || !pStatus)
         return 0;
 
-    *pStatus = DSTS_ERROR_SUCCESS;
+    *pStatus = ERROR_SUCCESS;
 
     va_list args;
     va_start(args, pFmt);
@@ -486,7 +497,7 @@ dsts_secure_sscanf(const char *pInputString, int *pStatus, const char *pFmt, ...
         if (pFmt[0] == '%') {
             const char *tmp = parse_arg(&error, &pFmt[1], pInputString, &args);
 
-            if (error != DSTS_ERROR_SUCCESS) {
+            if (error != ERROR_SUCCESS) {
                 *pStatus = error;
                 return ret;
             }

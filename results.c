@@ -33,7 +33,7 @@
 
 #include "pgapifunc.h"
 
-#include "dsts_secure_sscanf.h"
+#include "secure_sscanf.h"
 
 /*	Helper macro */
 #define getEffectiveOid(conn, fi) pg_true_type((conn), (fi)->columntype, FI_type(fi))
@@ -2114,16 +2114,16 @@ static void KeySetSet(const TupleField *tuple, int num_fields, int num_key_field
 	int status = 0;
 	if (statusInit)
 		keyset->status = 0;
-	dsts_secure_sscanf(tuple[num_fields - num_key_fields].value, status, "(%u,%hu)",
-		DSTS_ARG_UINT(&(keyset->blocknum)), DSTS_ARG_USHORT(&(keyset->offset)));
+	secure_sscanf(tuple[num_fields - num_key_fields].value, status, "(%u,%hu)",
+		ARG_UINT(&(keyset->blocknum)), ARG_USHORT(&(keyset->offset)));
 	if (num_key_fields > 1)
 	{
 		const char *oval = tuple[num_fields - 1].value;
 
 		if ('-' == oval[0])
-			dsts_secure_sscanf(oval, status, "%d", DSTS_ARG_INT(&(keyset->oid)));
+			secure_sscanf(oval, status, "%d", ARG_INT(&(keyset->oid)));
 		else
-			dsts_secure_sscanf(oval, status, "%u", DSTS_ARG_UINT(&(keyset->oid)));
+			secure_sscanf(oval, status, "%u", ARG_UINT(&(keyset->oid)));
 	}
 	else
 		keyset->oid = 0;
@@ -3923,7 +3923,7 @@ irow_update(RETCODE ret, StatementClass *stmt, StatementClass *ustmt, SQLULEN gl
 
 		int status = 0;
 		if (cmdstr &&
-			dsts_secure_sscanf(cmdstr, status, "UPDATE %d", DSTS_ARG_INT(&updcnt)) == 1)
+			secure_sscanf(cmdstr, status, "UPDATE %d", ARG_INT(&updcnt)) == 1)
 		{
 			if (updcnt == 1)
 			{
@@ -4341,7 +4341,7 @@ SC_pos_delete(StatementClass *stmt,
 
 		int status = 0;
 		if (cmdstr &&
-			dsts_secure_sscanf(cmdstr, status, "DELETE %d", DSTS_ARG_INT(&dltcnt)) == 1)
+			secure_sscanf(cmdstr, status, "DELETE %d", ARG_INT(&dltcnt)) == 1)
 		{
 			if (dltcnt == 1)
 			{
@@ -4437,8 +4437,8 @@ irow_insert(RETCODE ret, StatementClass *stmt, StatementClass *istmt,
 
 		int status = 0;
 		if (cmdstr &&
-			dsts_secure_sscanf(cmdstr, status, "INSERT %u %d",
-				DSTS_ARG_UINT(&oid), DSTS_ARG_INT(&addcnt)) == 2 &&
+			secure_sscanf(cmdstr, status, "INSERT %u %d",
+				ARG_UINT(&oid), ARG_INT(&addcnt)) == 2 &&
 			addcnt == 1)
 		{
 			RETCODE	qret;

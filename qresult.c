@@ -26,7 +26,7 @@
 #include <string.h>
 #include <limits.h>
 
-#include "dsts_secure_sscanf.h"
+#include "secure_sscanf.h"
 
 static BOOL QR_prepare_for_tupledata(QResultClass *self);
 static BOOL QR_read_tuples_from_pgres(QResultClass *, PGresult **pgres);
@@ -929,7 +929,7 @@ SQLLEN	QR_move_cursor_to_last(QResultClass *self, StatementClass *stmt)
 	}
 	moved = (-1);
 	int status = 0;
-	if (dsts_secure_sscanf(res->command, status, "MOVE " FORMAT_ULEN, DSTS_ARG_ULONG(&moved)) > 0)
+	if (secure_sscanf(res->command, status, "MOVE " FORMAT_ULEN, ARG_ULONG(&moved)) > 0)
 	{
 		moved++;
 		self->cursTuple += moved;
@@ -1029,7 +1029,7 @@ MYLOG(DETAIL_LOG_LEVEL, "cache=" FORMAT_ULEN " rowset=%d movement=" FORMAT_ULEN 
 		}
 		moved = movement;
 		int status = 0;
-		if (dsts_secure_sscanf(mres->command, status, "MOVE " FORMAT_ULEN, DSTS_ARG_ULONG(&moved)) > 0)
+		if (secure_sscanf(mres->command, status, "MOVE " FORMAT_ULEN, ARG_ULONG(&moved)) > 0)
 		{
 MYLOG(DETAIL_LOG_LEVEL, "moved=" FORMAT_ULEN " ? " FORMAT_ULEN "\n", moved, movement);
 			if (moved < movement)
@@ -1427,9 +1427,9 @@ nextrow:
 					}
 					int status = 0;
 					if (field_lf == effective_cols)
-						dsts_secure_sscanf(buffer, status, "(%u,%hu)",
-							DSTS_ARG_UINT(&this_keyset->blocknum),
-							DSTS_ARG_USHORT(&this_keyset->offset));
+						secure_sscanf(buffer, status, "(%u,%hu)",
+							ARG_UINT(&this_keyset->blocknum),
+							ARG_USHORT(&this_keyset->offset));
 					else
 						this_keyset->oid = strtoul(buffer, NULL, 10);
 				}

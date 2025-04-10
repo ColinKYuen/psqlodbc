@@ -23,7 +23,7 @@
 
 #include "pgapifunc.h"
 
-#include "dsts_secure_sscanf.h"
+#include "secure_sscanf.h"
 
 #define	NULL_IF_NULL(a) ((a) ? ((const char *)(a)) : "(null)")
 CSTR	ENTRY_TEST = " @@@ ";
@@ -130,8 +130,8 @@ BOOL	setExtraOptions(ConnInfo *ci, const char *optstr, const char *format)
 			format = dec_format;
 	}
 
-	if (cnt = dsts_secure_sscanf(optstr, status, format,
-				DSTS_ARG_INT(&flag), DSTS_ARG_STR(&dummy, sizeof(dummy))), cnt < 1) // format error
+	if (cnt = secure_sscanf(optstr, status, format,
+				ARG_INT(&flag), ARG_STR(&dummy, sizeof(dummy))), cnt < 1) // format error
 		return FALSE;
 	else if (cnt > 1) // format error
 		return FALSE;
@@ -554,15 +554,15 @@ unfoldCXAttribute(ConnInfo *ci, const char *value)
 	if (strlen(value) < 2)
 	{
 		count = 3;
-		dsts_secure_sscanf(value, status, "%x", DSTS_ARG_INT(&flag));
+		secure_sscanf(value, status, "%x", ARG_INT(&flag));
 	}
 	else
 	{
 		char	cnt[8];
 		memcpy(cnt, value, 2);
 		cnt[2] = '\0';
-		dsts_secure_sscanf(cnt, status, "%x", DSTS_ARG_INT(&count));
-		dsts_secure_sscanf(value + 2, status, "%x", DSTS_ARG_INT(&flag));
+		secure_sscanf(cnt, status, "%x", ARG_INT(&count));
+		secure_sscanf(value + 2, status, "%x", ARG_INT(&flag));
 	}
 	ci->allow_keyset = (char)((flag & BIT_UPDATABLECURSORS) != 0);
 	ci->lf_conversion = (char)((flag & BIT_LFCONVERSION) != 0);
@@ -759,13 +759,13 @@ copyConnAttributes(ConnInfo *ci, const char *attribute, const char *value)
 
 		if ('+' == value[0])
 		{
-			dsts_secure_sscanf(value + 1, status, "%x-%x",
-				DSTS_ARG_INT(&val1), DSTS_ARG_INT(&val2));
+			secure_sscanf(value + 1, status, "%x-%x",
+				ARG_INT(&val1), ARG_INT(&val2));
 			add_removeExtraOptions(ci, val1, val2);
 		}
 		else if ('-' == value[0])
 		{
-			dsts_secure_sscanf(value + 1, status, "%x", DSTS_ARG_INT(&val2));
+			secure_sscanf(value + 1, status, "%x", ARG_INT(&val2));
 			add_removeExtraOptions(ci, 0, val2);
 		}
 		else
@@ -1115,7 +1115,7 @@ MYLOG(0, "drivername=%s\n", drivername);
 		UInt4	val = 0;
 		int 	status = 0;
 
-		dsts_secure_sscanf(temp, status, "%x", DSTS_ARG_INT(&val));
+		secure_sscanf(temp, status, "%x", ARG_INT(&val));
 		replaceExtraOptions(ci, val, TRUE);
 		MYLOG(0, "force_abbrev=%d bde=%d cvt_null_date=%d\n", ci->force_abbrev_connstr, ci->bde_environment, ci->cvt_null_date_string);
 	}

@@ -33,7 +33,7 @@
 #include "lobj.h"
 #include "pgapifunc.h"
 
-#include "dsts_secure_sscanf.h"
+#include "secure_sscanf.h"
 
 /** 
  * @brief Perform a Prepare on the SQL statement 
@@ -648,9 +648,9 @@ MYLOG(0, "count_of_deffered=%d has_notice=%d\n", count_of_deferred, stmt->has_no
 			int     count;
 			int		status = 0;
 
-			if (dsts_secure_sscanf(cmd, status, "UPDATE %d", DSTS_ARG_INT(&count)) == 1)
+			if (secure_sscanf(cmd, status, "UPDATE %d", ARG_INT(&count)) == 1)
 				;
-			else if (dsts_secure_sscanf(cmd, status, "DELETE %d", DSTS_ARG_INT(&count)) == 1)
+			else if (secure_sscanf(cmd, status, "DELETE %d", ARG_INT(&count)) == 1)
 				;
 			else
 				count = -1;

@@ -47,7 +47,7 @@
 #include "catfunc.h"
 #include "pgapifunc.h"
 
-#include "dsts_secure_sscanf.h"
+#include "secure_sscanf.h"
 
 CSTR	NAN_STRING = "NaN";
 CSTR	INFINITY_STRING = "Infinity";
@@ -259,14 +259,14 @@ static ODBCINT64 ATOI64(const char *val)
 {
 	int status;
 	ODBCINT64 ll;
-	dsts_secure_sscanf(val, &status, "%lld", DSTS_ARG_LLONG(&ll));
+	secure_sscanf(val, &status, "%lld", ARG_LLONG(&ll));
 	return ll;
 }
 static unsigned ODBCINT64 ATOI64U(const char *val)
 {
 	int status;
 	unsigned ODBCINT64 ll;
-	dsts_secure_sscanf(val, &status, "%llu", DSTS_ARG_ULLONG(&ll));
+	secure_sscanf(val, &status, "%llu", ARG_ULLONG(&ll));
 	return ll;
 }
 #endif /* HAVE_STRTOLL */
@@ -301,10 +301,10 @@ timestamp2stime(const char *str, SIMPLE_TIME *st, BOOL *bZone, int *zone)
 	st->infinity = 0;
 	rest[0] = '\0';
 	bc[0] = '\0';
-	if ((scnt = dsts_secure_sscanf(str, &status, "%4d-%2d-%2d %2d:%2d:%2d%31s %15s",
-					DSTS_ARG_INT(&y), DSTS_ARG_INT(&m), DSTS_ARG_INT(&d),
-					DSTS_ARG_INT(&hh), DSTS_ARG_INT(&mm), DSTS_ARG_INT(&ss),
-					DSTS_ARG_STR(&rest, sizeof(rest)), DSTS_ARG_STR(&bc, sizeof(bc)))) < 6)
+	if ((scnt = secure_sscanf(str, &status, "%4d-%2d-%2d %2d:%2d:%2d%31s %15s",
+					ARG_INT(&y), ARG_INT(&m), ARG_INT(&d),
+					ARG_INT(&hh), ARG_INT(&mm), ARG_INT(&ss),
+					ARG_STR(&rest, sizeof(rest)), ARG_STR(&bc, sizeof(bc)))) < 6)
 	{
 		if (scnt == 3) /* date */
 		{
@@ -316,9 +316,9 @@ timestamp2stime(const char *str, SIMPLE_TIME *st, BOOL *bZone, int *zone)
 			st->ss = 0;
 			return TRUE;
 		}
-		if ((scnt = dsts_secure_sscanf(str, &status, "%2d:%2d:%2d%31s %15s",
-						DSTS_ARG_INT(&hh), DSTS_ARG_INT(&mm), DSTS_ARG_INT(&ss),
-						DSTS_ARG_STR(&rest, sizeof(rest)), DSTS_ARG_STR(&bc, sizeof(bc)))) < 3)
+		if ((scnt = secure_sscanf(str, &status, "%2d:%2d:%2d%31s %15s",
+						ARG_INT(&hh), ARG_INT(&mm), ARG_INT(&ss),
+						ARG_STR(&rest, sizeof(rest)), ARG_STR(&bc, sizeof(bc)))) < 3)
 			return FALSE;
 		else
 		{
@@ -586,8 +586,8 @@ interval2istruct(SQLSMALLINT ctype, int precision, const char *str, SQL_INTERVAL
 	int 		status = 0;
 
 	memset(st, 0, sizeof(SQL_INTERVAL_STRUCT));
-	if ((scnt = dsts_secure_sscanf(str, status, "%d-%d",
-					DSTS_ARG_INT(&years), DSTS_ARG_INT(&mons))) >=2)
+	if ((scnt = secure_sscanf(str, status, "%d-%d",
+					ARG_INT(&years), ARG_INT(&mons))) >=2)
 	{
 		if (SQL_IS_YEAR_TO_MONTH == itype)
 		{
@@ -600,10 +600,10 @@ interval2istruct(SQLSMALLINT ctype, int precision, const char *str, SQL_INTERVAL
 		}
 		return FALSE;
 	}
-	else if (scnt = dsts_secure_sscanf(str, status, "%d %02d:%02d:%02d.%09s",
-						DSTS_ARG_INT(&days), DSTS_ARG_INT(&hours),
-						DSTS_ARG_INT(&minutes), DSTS_ARG_INT(&seconds),
-						DSTS_ARG_STR(&lit2, sizeof(lit2))
+	else if (scnt = secure_sscanf(str, status, "%d %02d:%02d:%02d.%09s",
+						ARG_INT(&days), ARG_INT(&hours),
+						ARG_INT(&minutes), ARG_INT(&seconds),
+						ARG_STR(&lit2, sizeof(lit2))
 					), 5 == scnt || 4 == scnt)
 	{
 		sign = days < 0 ? SQL_TRUE : SQL_FALSE;
@@ -617,9 +617,9 @@ interval2istruct(SQLSMALLINT ctype, int precision, const char *str, SQL_INTERVAL
 			st->intval.day_second.fraction = getPrecisionPart(precision, lit2);
 		return TRUE;
 	}
-	else if ((scnt = dsts_secure_sscanf(str, status, "%d %10s %d %10s",
-						DSTS_ARG_INT(&years), DSTS_ARG_STR(&lit1, sizeof(lit1)),
-						DSTS_ARG_INT(&mons), DSTS_ARG_STR(&lit2, sizeof(lit2)))) >=4)
+	else if ((scnt = secure_sscanf(str, status, "%d %10s %d %10s",
+						ARG_INT(&years), ARG_STR(&lit1, sizeof(lit1)),
+						ARG_INT(&mons), ARG_STR(&lit2, sizeof(lit2)))) >=4)
 	{
 		if (strnicmp(lit1, "year", 4) == 0 &&
 		    strnicmp(lit2, "mon", 2) == 0 &&
@@ -635,9 +635,9 @@ interval2istruct(SQLSMALLINT ctype, int precision, const char *str, SQL_INTERVAL
 		}
 		return FALSE;
 	}
-	if ((scnt = dsts_secure_sscanf(str, status, "%d %10s %d",
-					DSTS_ARG_INT(&years), DSTS_ARG_STR(&lit1, sizeof(lit1)),
-					DSTS_ARG_INT(&days))) == 2)
+	if ((scnt = secure_sscanf(str, status, "%d %10s %d",
+					ARG_INT(&years), ARG_STR(&lit1, sizeof(lit1)),
+					ARG_INT(&days))) == 2)
 	{
 		sign = years < 0 ? SQL_TRUE : SQL_FALSE;
 		if (SQL_IS_YEAR == itype &&
@@ -674,10 +674,10 @@ interval2istruct(SQLSMALLINT ctype, int precision, const char *str, SQL_INTERVAL
 		/* these formats should've been handled above already */
 		return FALSE;
 	}
-	scnt = dsts_secure_sscanf(str, status, "%d %10s %02d:%02d:%02d.%09s",
-				DSTS_ARG_INT(&days), DSTS_ARG_STR(&lit1, sizeof(lit1)),
-				DSTS_ARG_INT(&hours), DSTS_ARG_INT(&minutes), DSTS_ARG_INT(&seconds),
-				DSTS_ARG_STR(&lit2, sizeof(lit2)));
+	scnt = secure_sscanf(str, status, "%d %10s %02d:%02d:%02d.%09s",
+				ARG_INT(&days), ARG_STR(&lit1, sizeof(lit1)),
+				ARG_INT(&hours), ARG_INT(&minutes), ARG_INT(&seconds),
+				ARG_STR(&lit2, sizeof(lit2)));
 	if (scnt == 5 || scnt == 6)
 	{
 		if (strnicmp(lit1, "day", 3) != 0)
@@ -694,9 +694,9 @@ interval2istruct(SQLSMALLINT ctype, int precision, const char *str, SQL_INTERVAL
 			st->intval.day_second.fraction = getPrecisionPart(precision, lit2);
 		return TRUE;
 	}
-	scnt = dsts_secure_sscanf(str, status, "%02d:%02d:%02d.%09s",
-				DSTS_ARG_INT(&hours), DSTS_ARG_INT(&minutes), DSTS_ARG_INT(&seconds), 
-				DSTS_ARG_STR(&lit2, sizeof(lit2)));
+	scnt = secure_sscanf(str, status, "%02d:%02d:%02d.%09s",
+				ARG_INT(&hours), ARG_INT(&minutes), ARG_INT(&seconds), 
+				ARG_STR(&lit2, sizeof(lit2)));
 	if (scnt == 3 || scnt == 4)
 	{
 		sign = hours < 0 ? SQL_TRUE : SQL_FALSE;
@@ -1442,8 +1442,8 @@ MYLOG(0, "null_cvt_date_string=%d\n", conn->connInfo.cvt_null_date_string);
 			 */
 		case PG_TYPE_DATE:
 			int status = 0;
-			dsts_secure_sscanf(value, status, "%4d-%2d-%2d",
-				DSTS_ARG_INT(&std_time.y), DSTS_ARG_INT(&std_time.m), DSTS_ARG_INT(&std_time.d));
+			secure_sscanf(value, status, "%4d-%2d-%2d",
+				ARG_INT(&std_time.y), ARG_INT(&std_time.m), ARG_INT(&std_time.d));
 			break;
 
 		case PG_TYPE_TIME:
@@ -1558,7 +1558,7 @@ MYLOG(DETAIL_LOG_LEVEL, "2stime fr=%d\n", std_time.fr);
 				for (i = 0;; i++)
 				{
 					int status = 0;
-					if (dsts_secure_sscanf(vp, status, "%hi", DSTS_ARG_SHORT(&shortv)) != 1)
+					if (secure_sscanf(vp, status, "%hi", ARG_SHORT(&shortv)) != 1)
 						break;
 					MYPRINTF(0, " %hi", shortv);
 					nval++;
@@ -5584,7 +5584,7 @@ convert_escape(QueryParse *qp, QueryBuild *qb)
 	}
 
 	int status = 0;
-	dsts_secure_sscanf(F_OldPtr(qp), status, "%32s", DSTS_ARG_STR(&key, sizeof(key)));
+	secure_sscanf(F_OldPtr(qp), status, "%32s", ARG_STR(&key, sizeof(key)));
 	while ((ucv = F_OldChar(qp)) != '\0' && (IS_NOT_SPACE(ucv)))
 		F_OldNext(qp);
 	while ((ucv = F_OldChar(qp)) != '\0' && isspace(ucv))
@@ -6023,13 +6023,13 @@ parse_datetime(const char *buf, SIMPLE_TIME *st)
 	if (timestamp2stime(buf, st, &bZone, &zone))
 		return TRUE;
 	if (buf[4] == '-')			/* year first */
-		nf = dsts_secure_sscanf(buf, status, "%4d-%2d-%2d %2d:%2d:%2d",
-				DSTS_ARG_INT(&y), DSTS_ARG_INT(&m), DSTS_ARG_INT(&d),
-				DSTS_ARG_INT(&hh), DSTS_ARG_INT(&mm), DSTS_ARG_INT(&ss));
+		nf = secure_sscanf(buf, status, "%4d-%2d-%2d %2d:%2d:%2d",
+				ARG_INT(&y), ARG_INT(&m), ARG_INT(&d),
+				ARG_INT(&hh), ARG_INT(&mm), ARG_INT(&ss));
 	else
-		nf = dsts_secure_sscanf(buf, status, "%2d-%2d-%4d %2d:%2d:%2d",
-			DSTS_ARG_INT(&m), DSTS_ARG_INT(&d), DSTS_ARG_INT(&y),
-			DSTS_ARG_INT(&hh), DSTS_ARG_INT(&mm), DSTS_ARG_INT(&ss));
+		nf = secure_sscanf(buf, status, "%2d-%2d-%4d %2d:%2d:%2d",
+			ARG_INT(&m), ARG_INT(&d), ARG_INT(&y),
+			ARG_INT(&hh), ARG_INT(&mm), ARG_INT(&ss));
 
 	if (nf == 5 || nf == 6)
 	{
@@ -6044,11 +6044,11 @@ parse_datetime(const char *buf, SIMPLE_TIME *st)
 	}
 
 	if (buf[4] == '-')			/* year first */
-		nf = dsts_secure_sscanf(buf, status, "%4d-%2d-%2d",
-				DSTS_ARG_INT(&y), DSTS_ARG_INT(&m), DSTS_ARG_INT(&d));
+		nf = secure_sscanf(buf, status, "%4d-%2d-%2d",
+				ARG_INT(&y), ARG_INT(&m), ARG_INT(&d));
 	else
-		nf = dsts_secure_sscanf(buf, status, "%2d-%2d-%4d",
-				DSTS_ARG_INT(&m), DSTS_ARG_INT(&d), DSTS_ARG_INT(&y));
+		nf = secure_sscanf(buf, status, "%2d-%2d-%4d",
+				ARG_INT(&m), ARG_INT(&d), ARG_INT(&y));
 
 	if (nf == 3)
 	{
@@ -6059,8 +6059,8 @@ parse_datetime(const char *buf, SIMPLE_TIME *st)
 		return TRUE;
 	}
 
-	nf = dsts_secure_sscanf(buf, status, "%2d:%2d:%2d",
-			DSTS_ARG_INT(&hh), DSTS_ARG_INT(&mm), DSTS_ARG_INT(&ss));
+	nf = secure_sscanf(buf, status, "%2d:%2d:%2d",
+			ARG_INT(&hh), ARG_INT(&mm), ARG_INT(&ss));
 	if (nf == 2 || nf == 3)
 	{
 		st->hh = hh;
