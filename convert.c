@@ -1444,9 +1444,11 @@ MYLOG(0, "null_cvt_date_string=%d\n", conn->connInfo.cvt_null_date_string);
 			 * PG_TYPE_CHAR,VARCHAR $$$
 			 */
 		case PG_TYPE_DATE:
-			int status = 0;
-			secure_sscanf(value, &status, "%4d-%2d-%2d",
+			{
+				int status = 0;
+				secure_sscanf(value, &status, "%4d-%2d-%2d",
 				ARG_INT(&std_time.y), ARG_INT(&std_time.m), ARG_INT(&std_time.d));
+			}		
 			break;
 
 		case PG_TYPE_TIME:

@@ -161,329 +161,400 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
     long spType = TYPE_DEFAULT;
     switch (*pFmt) {
         case 'h':
-            pFmt++;
-            if (*pFmt == 'h') {
+            {
                 pFmt++;
-                spType = TYPE_CHAR;
-            } else {
-                spType = TYPE_SHORT;
+                if (*pFmt == 'h') {
+                    pFmt++;
+                    spType = TYPE_CHAR;
+                } else {
+                    spType = TYPE_SHORT;
+                }
+                break;
             }
-            break;
 
         case 'I':
-            pFmt++;
-            if (*pFmt == '6') {
+            {
                 pFmt++;
-                if (*pFmt == '4') {
+                if (*pFmt == '6') {
                     pFmt++;
-                    spType = TYPE_LLONG;
-                    break;
-                } 
+                    if (*pFmt == '4') {
+                        pFmt++;
+                        spType = TYPE_LLONG;
+                        break;
+                    } 
+                }
+                PUT_VALUE(pError, ERROR_INVALID_FMT);
+                return skip_spaces(pCurrent);
             }
-            PUT_VALUE(pError, ERROR_INVALID_FMT);
-            return skip_spaces(pCurrent);
 
         case 'l':
-            pFmt++;
-            if (*pFmt == 'l') {
+            {
                 pFmt++;
-                spType = TYPE_LLONG;
-            } else {
-                spType = TYPE_LONG;
+                if (*pFmt == 'l') {
+                    pFmt++;
+                    spType = TYPE_LLONG;
+                } else {
+                    spType = TYPE_LONG;
+                }
+                break;
             }
-            break;
         default:
             break;
     }
 
     switch (*pFmt) {
         case 'f':
+            {
+                VALIDATE_FMT_TYPE(TYPE_FLOAT);
+                pOutput = (void *)va_arg(*args, float *);
+                PUT_VALUE((float *)pOutput, 0.0f);
 
-            VALIDATE_FMT_TYPE(TYPE_FLOAT);
-            pOutput = (void *)va_arg(*args, float *);
-            PUT_VALUE((float *)pOutput, 0.0f);
+                fRet = strtof(pParse, &pEnd);
+                if (pEnd == pParse) {
+                    PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                    return skip_spaces(pCurrent);
+                }
 
-            fRet = strtof(pParse, &pEnd);
-            if (pEnd == pParse) {
-                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                return skip_spaces(pCurrent);
+                if (useTrim) {
+                    while (uWidth-- > 0 && *pParse != *pEnd) {
+                        pCurrent++;
+                        pParse++;
+                    } 
+                } else {
+                    pCurrent = pEnd;
+                }
+
+                if (((fRet == HUGE_VALF || fRet == -HUGE_VALF)) && (errno == ERANGE)) {
+                    PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                    return skip_spaces(pCurrent);
+                }
+
+                PUT_VALUE((float *)pOutput, fRet);
+                break;
             }
-
-            if (useTrim) {
-                while (uWidth-- > 0 && *pParse != *pEnd) {
-                    pCurrent++;
-                    pParse++;
-                } 
-            } else {
-                pCurrent = pEnd;
-            }
-
-            if (((fRet == HUGE_VALF || fRet == -HUGE_VALF)) && (errno == ERANGE)) {
-                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                return skip_spaces(pCurrent);
-            }
-
-            PUT_VALUE((float *)pOutput, fRet);
-            break;
 
         case 'i':   
-            if (*pCurrent == '0') {
-                if (*(pCurrent + 1) == 'x') {
-                    iBase = 16;
-                } else {
-                    iBase = 8;
+            {
+                if (*pCurrent == '0') {
+                    if (*(pCurrent + 1) == 'x') {
+                        iBase = 16;
+                    } else {
+                        iBase = 8;
+                    }
                 }
+                FALL_THROUGH;
             }
-            FALL_THROUGH;
 
         case 'd':
-            VALIDATE_FMT_TYPE(spType == TYPE_DEFAULT ? TYPE_INT : spType);
-            switch (spType) {
-                case TYPE_CHAR:
-                    pOutput = (void *)va_arg(*args, char *);
-                    PUT_VALUE((char *)pOutput, 0);
-                    lRet = strtol(pParse, &pEnd, iBase);
-                    break;
-
-                case TYPE_SHORT:
-                    pOutput = (void *)va_arg(*args, short *);
-                    PUT_VALUE((short *)pOutput, 0);
-                    lRet = strtol(pParse, &pEnd, iBase);
-                    break;
-
-                case TYPE_LONG:
-                    pOutput = (void *)va_arg(*args, long *);
-                    PUT_VALUE((long *)pOutput, 0);
-                    lRet = strtol(pParse, &pEnd, iBase);
-                    break;
-
-                case TYPE_LLONG:
-                    pOutput = (void *)va_arg(*args, long long *);
-                    PUT_VALUE((long long *)pOutput, 0);
-                    llRet = strtoll(pParse, &pEnd, iBase);
-                    break;
-
-                case TYPE_DEFAULT:
-                    FALL_THROUGH;
-                default:
-                    pOutput = (void *)va_arg(*args, unsigned int *);
-                    PUT_VALUE((int *)pOutput, 0);
-                    lRet = strtol(pParse, &pEnd, iBase);
-            }
-
-            if (pEnd == pParse) {
-                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                return skip_spaces(pCurrent);
-            }
-
-            if (useTrim) {
-                while (uWidth-- > 0 && *pParse != *pEnd) {
-                    pCurrent++;
-                    pParse++;
-                } 
-            } else {
-                pCurrent = pEnd;
-            }
-
-            if ((lRet == HUGE_VAL) && (errno == ERANGE)) {
-                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                return skip_spaces(pCurrent);
-            }
-
-            switch (spType) {
+            {
+                VALIDATE_FMT_TYPE(spType == TYPE_DEFAULT ? TYPE_INT : spType);
+                switch (spType) {
                     case TYPE_CHAR:
-                        if (lRet > CHAR_MAX) {
-                            PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                            return skip_spaces(pCurrent);
+                        {
+                            pOutput = (void *)va_arg(*args, char *);
+                            PUT_VALUE((char *)pOutput, 0);
+                            lRet = strtol(pParse, &pEnd, iBase);
+                            break;
                         }
-                        PUT_VALUE((char *)pOutput, lRet);
-                        break;
 
                     case TYPE_SHORT:
-                        if (lRet > SHRT_MAX) {
-                            PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                            return skip_spaces(pCurrent);
+                        {
+                            pOutput = (void *)va_arg(*args, short *);
+                            PUT_VALUE((short *)pOutput, 0);
+                            lRet = strtol(pParse, &pEnd, iBase);
+                            break;
                         }
-                        PUT_VALUE((short *)pOutput, lRet);
-                        break;
 
                     case TYPE_LONG:
-                        if (lRet > LONG_MAX) {
-                            PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                            return skip_spaces(pCurrent);
+                        {
+                            pOutput = (void *)va_arg(*args, long *);
+                            PUT_VALUE((long *)pOutput, 0);
+                            lRet = strtol(pParse, &pEnd, iBase);
+                            break;
                         }
-                        PUT_VALUE((long *)pOutput, lRet);
-                        break;
 
                     case TYPE_LLONG:
-                        if (llRet > LLONG_MAX) {
-                            PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                            return skip_spaces(pCurrent);
+                        {
+                            pOutput = (void *)va_arg(*args, long long *);
+                            PUT_VALUE((long long *)pOutput, 0);
+                            llRet = strtoll(pParse, &pEnd, iBase);
+                            break;
                         }
-                        PUT_VALUE((long long *)pOutput, llRet);
-                        break;
 
                     case TYPE_DEFAULT:
-                        FALL_THROUGH;
-                    default:
-                        if (lRet > INT_MAX) {
-                            PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                            return skip_spaces(pCurrent);
+                        {
+                            FALL_THROUGH;
                         }
-                        PUT_VALUE((int *)pOutput, lRet);
+                    default:
+                        {
+                            pOutput = (void *)va_arg(*args, unsigned int *);
+                            PUT_VALUE((int *)pOutput, 0);
+                            lRet = strtol(pParse, &pEnd, iBase);
+                        }
+                }
+
+                if (pEnd == pParse) {
+                    PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                    return skip_spaces(pCurrent);
+                }
+
+                if (useTrim) {
+                    while (uWidth-- > 0 && *pParse != *pEnd) {
+                        pCurrent++;
+                        pParse++;
+                    } 
+                } else {
+                    pCurrent = pEnd;
+                }
+
+                if ((lRet == HUGE_VAL) && (errno == ERANGE)) {
+                    PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                    return skip_spaces(pCurrent);
+                }
+
+                switch (spType) {
+                        case TYPE_CHAR:
+                            {
+                                if (lRet > CHAR_MAX) {
+                                    PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                                    return skip_spaces(pCurrent);
+                                }
+                                PUT_VALUE((char *)pOutput, lRet);
+                                break;
+                            }
+
+                        case TYPE_SHORT:
+                            {
+                                if (lRet > SHRT_MAX) {
+                                    PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                                    return skip_spaces(pCurrent);
+                                }
+                                PUT_VALUE((short *)pOutput, lRet);
+                                break;
+                            }
+
+                        case TYPE_LONG:
+                            {
+                                if (lRet > LONG_MAX) {
+                                    PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                                    return skip_spaces(pCurrent);
+                                }
+                                PUT_VALUE((long *)pOutput, lRet);
+                                break;
+                            }
+
+                        case TYPE_LLONG:
+                            {
+                                if (llRet > LLONG_MAX) {
+                                    PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                                    return skip_spaces(pCurrent);
+                                }
+                                PUT_VALUE((long long *)pOutput, llRet);
+                                break;
+                            }
+
+                        case TYPE_DEFAULT:
+                            {
+                                FALL_THROUGH;
+                            }
+                        default:
+                            {
+                                if (lRet > INT_MAX) {
+                                    PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                                    return skip_spaces(pCurrent);
+                                }
+                                PUT_VALUE((int *)pOutput, lRet);
+                            }
+                }
+                break;
             }
-            break;
 
         case 'X':
-            FALL_THROUGH;
+            {
+                FALL_THROUGH;
+            }
 
         case 'x':
-            iBase = 16;
-            FALL_THROUGH;
+            {
+                iBase = 16;
+                FALL_THROUGH;    
+            }
 
         case 'u':
-            // Up by 1 to "unsigned" type
-            unsigned long type = spType == TYPE_DEFAULT ? TYPE_UINT : spType + 1;
-            VALIDATE_FMT_TYPE(type);
-            switch (type) {
-                case TYPE_UCHAR:
-                    pOutput = (void *)va_arg(*args, unsigned char *);
-                    PUT_VALUE((unsigned char *)pOutput, 0);
-                    ulRet = strtoul(pParse, &pEnd, iBase);
-                    break;
+            {
+                // Up by 1 to "unsigned" type
+                unsigned long type = spType == TYPE_DEFAULT ? TYPE_UINT : spType + 1;
+                VALIDATE_FMT_TYPE(type);
+                switch (type) {
+                    case TYPE_UCHAR:
+                        {
+                            pOutput = (void *)va_arg(*args, unsigned char *);
+                            PUT_VALUE((unsigned char *)pOutput, 0);
+                            ulRet = strtoul(pParse, &pEnd, iBase);
+                            break;
+                        }
 
-                case TYPE_USHORT:
-                    pOutput = (void *)va_arg(*args, unsigned short *);
-                    PUT_VALUE((unsigned short *)pOutput, 0);
-                    ulRet = strtoul(pParse, &pEnd, iBase);
-                    break;
+                    case TYPE_USHORT:
+                        {
+                            pOutput = (void *)va_arg(*args, unsigned short *);
+                            PUT_VALUE((unsigned short *)pOutput, 0);
+                            ulRet = strtoul(pParse, &pEnd, iBase);
+                            break;
+                        }
 
-                case TYPE_ULONG:
-                    pOutput = (void *)va_arg(*args, unsigned long *);
-                    PUT_VALUE((unsigned long *)pOutput, 0);
-                    ulRet = strtoul(pParse, &pEnd, iBase);
-                    break;
+                    case TYPE_ULONG:
+                        {
+                            pOutput = (void *)va_arg(*args, unsigned long *);
+                            PUT_VALUE((unsigned long *)pOutput, 0);
+                            ulRet = strtoul(pParse, &pEnd, iBase);
+                            break;
+                        }
 
-                case TYPE_ULLONG:
-                    pOutput = (void *)va_arg(*args, unsigned long long *);
-                    PUT_VALUE((unsigned long long *)pOutput, 0);
-                    ullRet = strtoull(pParse, &pEnd, iBase);
-                    break;
+                    case TYPE_ULLONG:
+                        {
+                            pOutput = (void *)va_arg(*args, unsigned long long *);
+                            PUT_VALUE((unsigned long long *)pOutput, 0);
+                            ullRet = strtoull(pParse, &pEnd, iBase);
+                            break;
+                        }
 
-                case TYPE_DEFAULT:
-                    FALL_THROUGH;
-                default:
-                    pOutput = (void *)va_arg(*args, unsigned int *);
-                    PUT_VALUE((unsigned int *)pOutput, 0);
-                    ulRet = strtoul(pParse, &pEnd, iBase);
-            }
-
-            if (pEnd == pCurrent) {
-                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                return skip_spaces(pCurrent);
-            }
-
-            if (useTrim) {
-                while (uWidth-- > 0 && *pParse != *pEnd) {
-                    pCurrent++;
-                    pParse++;
+                    case TYPE_DEFAULT:
+                        {
+                            FALL_THROUGH;
+                        }
+                    default:
+                        {
+                            pOutput = (void *)va_arg(*args, unsigned int *);
+                            PUT_VALUE((unsigned int *)pOutput, 0);
+                            ulRet = strtoul(pParse, &pEnd, iBase);
+                        }
                 }
-            } else {
-                pCurrent = pEnd;
+
+                if (pEnd == pCurrent) {
+                    PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                    return skip_spaces(pCurrent);
+                }
+
+                if (useTrim) {
+                    while (uWidth-- > 0 && *pParse != *pEnd) {
+                        pCurrent++;
+                        pParse++;
+                    }
+                } else {
+                    pCurrent = pEnd;
+                }
+
+                if ((ulRet == HUGE_VAL) && (errno == ERANGE)) {
+                    PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                    return skip_spaces(pCurrent);
+                }
+
+                switch (type) {
+                    case TYPE_UCHAR:
+                        {
+                            if (ulRet > UCHAR_MAX) {
+                                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                                return skip_spaces(pCurrent);
+                            }
+                            PUT_VALUE((unsigned char *)pOutput, ulRet);
+                            break;
+                        }
+
+                    case TYPE_USHORT:
+                        {
+                            if (ulRet > USHRT_MAX) {
+                                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                                return skip_spaces(pCurrent);
+                            }
+                            PUT_VALUE((unsigned short *)pOutput, ulRet);
+                            break;
+                        }
+
+                    case TYPE_ULONG:
+                        {
+                            if (ulRet > ULONG_MAX) {
+                                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                                return skip_spaces(pCurrent);
+                            }
+                            PUT_VALUE((unsigned long *)pOutput, ulRet);
+                            break;
+                        }
+
+                    case TYPE_ULLONG:
+                        {
+                            if (ullRet > ULLONG_MAX) {
+                                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                                return skip_spaces(pCurrent);
+                            }
+                            PUT_VALUE((unsigned long long *)pOutput, ullRet);
+                            break;
+                        }
+
+                    case TYPE_DEFAULT:
+                        {
+                            FALL_THROUGH;
+                        }
+                    default:
+                        {
+                            if (lRet > UINT_MAX) {
+                                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
+                                return skip_spaces(pCurrent);
+                            }
+                            PUT_VALUE((unsigned int *)pOutput, ulRet);
+                        }
+                }
+                break;
             }
-
-            if ((ulRet == HUGE_VAL) && (errno == ERANGE)) {
-                PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                return skip_spaces(pCurrent);
-            }
-
-            switch (type) {
-                case TYPE_UCHAR:
-                    if (ulRet > UCHAR_MAX) {
-                        PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                        return skip_spaces(pCurrent);
-                    }
-                    PUT_VALUE((unsigned char *)pOutput, ulRet);
-                    break;
-
-                case TYPE_USHORT:
-                    if (ulRet > USHRT_MAX) {
-                        PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                        return skip_spaces(pCurrent);
-                    }
-                    PUT_VALUE((unsigned short *)pOutput, ulRet);
-                    break;
-
-                case TYPE_ULONG:
-                    if (ulRet > ULONG_MAX) {
-                        PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                        return skip_spaces(pCurrent);
-                    }
-                    PUT_VALUE((unsigned long *)pOutput, ulRet);
-                    break;
-
-                case TYPE_ULLONG:
-                    if (ullRet > ULLONG_MAX) {
-                        PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                        return skip_spaces(pCurrent);
-                    }
-                    PUT_VALUE((unsigned long long *)pOutput, ullRet);
-                    break;
-
-                case TYPE_DEFAULT:
-                    FALL_THROUGH;
-                default:
-                    if (lRet > UINT_MAX) {
-                        PUT_VALUE(pError, ERROR_NUMERIC_CONVERSION);
-                        return skip_spaces(pCurrent);
-                    }
-                    PUT_VALUE((unsigned int *)pOutput, ulRet);
-            }
-            break;
 
         case 'c':
-            VALIDATE_FMT_TYPE(TYPE_CHAR);
-            pOutput = (void *)va_arg(*args, unsigned char *);
-            PUT_VALUE((char *)pOutput, *pInputString);
-            break;
+            {
+                VALIDATE_FMT_TYPE(TYPE_CHAR);
+                pOutput = (void *)va_arg(*args, unsigned char *);
+                PUT_VALUE((char *)pOutput, *pInputString);
+                break;
+            }
 
         case 's':
-            VALIDATE_FMT_TYPE(TYPE_STRING);
-            pOutput = (void *)va_arg(*args, char *);
-            cbSize  = va_arg(*args, size_t);
+            {
+                VALIDATE_FMT_TYPE(TYPE_STRING);
+                pOutput = (void *)va_arg(*args, char *);
+                cbSize  = va_arg(*args, size_t);
 
-            if (!pOutput)
-                return pCurrent;
+                if (!pOutput)
+                    return pCurrent;
 
-            if (cbSize > MAX_STRING_OUTPUT) {
-                PUT_VALUE(pError, ERROR_BUFFER_TOO_SMALL);
-                return pCurrent;
-            }
+                if (cbSize > MAX_STRING_OUTPUT) {
+                    PUT_VALUE(pError, ERROR_BUFFER_TOO_SMALL);
+                    return pCurrent;
+                }
 
-            if (cbSize) {
-                memset(pOutput, '\0', useTrim ? uWidth : cbSize);
-                cbSize--;
-                while (pCurrent[0] != '\0' && !isspace(pCurrent[0]) && cbSize != 0 && (useTrim ? uWidth-- > 0 : 1)) {
-                    #ifdef _MSC_VER
-                        *((char*)pOutput)++ = *pCurrent++;
-                    #else
-                        *(char *)pOutput++ = *pCurrent++;
-                    #endif
+                if (cbSize) {
+                    memset(pOutput, '\0', useTrim ? uWidth : cbSize);
                     cbSize--;
+                    while (pCurrent[0] != '\0' && !isspace(pCurrent[0]) && cbSize != 0 && (useTrim ? uWidth-- > 0 : 1)) {
+                        #ifdef _MSC_VER
+                            *((char*)pOutput)++ = *pCurrent++;
+                        #else
+                            *(char *)pOutput++ = *pCurrent++;
+                        #endif
+                        cbSize--;
+                    }
+
+                    if (cbSize == 0) {
+                        /* Truncated ... Should this condition be propogated ? */
+                        while (pCurrent[0] != '\0' && !isspace(pCurrent[0]))
+                            pCurrent++;
+                    }
                 }
 
-                if (cbSize == 0) {
-                    /* Truncated ... Should this condition be propogated ? */
-                    while (pCurrent[0] != '\0' && !isspace(pCurrent[0]))
-                        pCurrent++;
-                }
+                break;
             }
-
-            break;
 
         default:
-            PUT_VALUE(pError, ERROR_INVALID_FMT);
-            return pCurrent;
+            {
+                PUT_VALUE(pError, ERROR_INVALID_FMT);
+                return pCurrent;
+            }
     }
 
     return skip_spaces(pCurrent);
