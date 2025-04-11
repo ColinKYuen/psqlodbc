@@ -169,6 +169,20 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
                 spType = TYPE_SHORT;
             }
             break;
+
+        case 'I':
+            pFmt++;
+            if (*pFmt == '6') {
+                pFmt++;
+                if (*pFmt == '4') {
+                    pFmt++;
+                    spType = TYPE_LLONG;
+                    break;
+                } 
+            }
+            PUT_VALUE(pError, ERROR_INVALID_FMT);
+            return skip_spaces(pCurrent);
+
         case 'l':
             pFmt++;
             if (*pFmt == 'l') {
@@ -472,7 +486,7 @@ parse_arg(int *pError, const char *pFmt, const char *pInputString, va_list *args
             return pCurrent;
     }
 
-    return pCurrent;
+    return skip_spaces(pCurrent);
 }
 
 int

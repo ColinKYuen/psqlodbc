@@ -14,6 +14,9 @@
 //  License along with this library; if not, write to the Free Software
 //  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 
+#ifndef __SECURESSCANF_H__
+#define __SECURESSCANF_H__
+
 #define MAX_STRING_OUTPUT                  4096 * 4
 #define ERROR_SUCCESS                      0
 #define ERROR_NUMERIC_CONVERSION           -1
@@ -71,3 +74,5 @@ enum CheckTypes {
 #endif
 
 int secure_sscanf(const char *pInputString, int *pStatus, const char *pFmt, ... );
+
+#endif /* __SECURESSCANF_H__ */
