@@ -579,9 +579,9 @@ static int getPrecisionPart(int precision, const char * precPart)
 static BOOL
 interval2istruct(SQLSMALLINT ctype, int precision, const char *str, SQL_INTERVAL_STRUCT *st)
 {
-	char		lit1[64], lit2[64];
-	int			scnt, years, mons, days, hours, minutes, seconds;
-	BOOL		sign;
+	char	lit1[64], lit2[64];
+	int	scnt, years, mons, days, hours, minutes, seconds;
+	BOOL	sign;
 	SQLINTERVAL	itype = interval2itype(ctype);
 	int 		status = 0;
 
@@ -885,12 +885,15 @@ static int char2guid(const char *str, SQLGUID *g)
 	 * "unsigned int", so use a temporary variable for it.
 	 */
 	unsigned int Data1;
-	if (sscanf(str,
+	int status = 0;
+	if (secure_sscanf(str, &status,
 		"%08X-%04hX-%04hX-%02hhX%02hhX-%02hhX%02hhX%02hhX%02hhX%02hhX%02hhX",
-		&Data1,
-		&g->Data2, &g->Data3,
-		&g->Data4[0], &g->Data4[1], &g->Data4[2], &g->Data4[3],
-		&g->Data4[4], &g->Data4[5], &g->Data4[6], &g->Data4[7]) < 11)
+		ARG_UINT(&Data1),
+		ARG_USHORT(&g->Data2), ARG_USHORT(&g->Data3),
+		ARG_UCHAR(&g->Data4[0]), ARG_UCHAR(&g->Data4[1]),
+		ARG_UCHAR(&g->Data4[2]), ARG_UCHAR(&g->Data4[3]),
+		ARG_UCHAR(&g->Data4[4]), ARG_UCHAR(&g->Data4[5]),
+		ARG_UCHAR(&g->Data4[6]), ARG_UCHAR(&g->Data4[7])) < 11)
 		return COPY_GENERAL_ERROR;
 	g->Data1 = Data1;
 	return COPY_OK;
@@ -5553,7 +5556,7 @@ convert_escape(QueryParse *qp, QueryBuild *qb)
 {
 	RETCODE	retval = SQL_SUCCESS;
 	char		buf[1024], buf_small[128], key[65];
-	UCHAR		ucv;
+	UCHAR	ucv;
 	UInt4		prtlen;
 
 	QueryBuild	nqb;
@@ -5999,7 +6002,7 @@ parse_datetime(const char *buf, SIMPLE_TIME *st)
 				mm,
 				ss;
 	int			nf;
-	int 		status = 0;
+	int			status = 0;
 	BOOL	bZone;	int	zone;
 
 	y = m = d = hh = mm = ss = 0;

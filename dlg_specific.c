@@ -105,7 +105,7 @@ BOOL	setExtraOptions(ConnInfo *ci, const char *optstr, const char *format)
 {
 	UInt4	flag = 0, cnt;
 	char	dummy[2];
-	int		status = 0;
+	int	status = 0;
 
 	if (!format)
 	{
@@ -131,7 +131,7 @@ BOOL	setExtraOptions(ConnInfo *ci, const char *optstr, const char *format)
 	}
 
 	if (cnt = secure_sscanf(optstr, &status, format,
-				ARG_INT(&flag), ARG_STR(&dummy, sizeof(dummy))), cnt < 1) // format error
+				ARG_UINT(&flag), ARG_STR(&dummy, sizeof(dummy))), cnt < 1) // format error
 		return FALSE;
 	else if (cnt > 1) // format error
 		return FALSE;
@@ -547,22 +547,22 @@ MYLOG(DETAIL_LOG_LEVEL, "hlen=" FORMAT_SSIZE_T "\n", hlen);
 static void
 unfoldCXAttribute(ConnInfo *ci, const char *value)
 {
-	int		count;
+	int	count;
 	UInt4	flag;
-	int		status = 0;
+	int	status = 0;
 
 	if (strlen(value) < 2)
 	{
 		count = 3;
-		secure_sscanf(value, &status, "%x", ARG_INT(&flag));
+		secure_sscanf(value, &status, "%x", ARG_UINT(&flag));
 	}
 	else
 	{
 		char	cnt[8];
 		memcpy(cnt, value, 2);
 		cnt[2] = '\0';
-		secure_sscanf(cnt, &status, "%x", ARG_INT(&count));
-		secure_sscanf(value + 2, &status, "%x", ARG_INT(&flag));
+		secure_sscanf(cnt, &status, "%x", ARG_UINT(&count));
+		secure_sscanf(value + 2, &status, "%x", ARG_UINT(&flag));
 	}
 	ci->allow_keyset = (char)((flag & BIT_UPDATABLECURSORS) != 0);
 	ci->lf_conversion = (char)((flag & BIT_LFCONVERSION) != 0);
@@ -760,12 +760,12 @@ copyConnAttributes(ConnInfo *ci, const char *attribute, const char *value)
 		if ('+' == value[0])
 		{
 			secure_sscanf(value + 1, &status, "%x-%x",
-				ARG_INT(&val1), ARG_INT(&val2));
+				ARG_UINT(&val1), ARG_UINT(&val2));
 			add_removeExtraOptions(ci, val1, val2);
 		}
 		else if ('-' == value[0])
 		{
-			secure_sscanf(value + 1, &status, "%x", ARG_INT(&val2));
+			secure_sscanf(value + 1, &status, "%x", ARG_UINT(&val2));
 			add_removeExtraOptions(ci, 0, val2);
 		}
 		else
@@ -925,7 +925,7 @@ void
 getDSNinfo(ConnInfo *ci, const char *configDrvrname)
 {
 	char	   *DSN = ci->dsn;
-	char		temp[LARGE_REGISTRY_LEN];
+	char	temp[LARGE_REGISTRY_LEN];
 	const char *drivername;
 
 /*
@@ -1115,7 +1115,7 @@ MYLOG(0, "drivername=%s\n", drivername);
 		UInt4	val = 0;
 		int 	status = 0;
 
-		secure_sscanf(temp, &status, "%x", ARG_INT(&val));
+		secure_sscanf(temp, &status, "%x", ARG_UINT(&val));
 		replaceExtraOptions(ci, val, TRUE);
 		MYLOG(0, "force_abbrev=%d bde=%d cvt_null_date=%d\n", ci->force_abbrev_connstr, ci->bde_environment, ci->cvt_null_date_string);
 	}

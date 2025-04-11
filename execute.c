@@ -645,8 +645,8 @@ MYLOG(0, "count_of_deffered=%d has_notice=%d\n", count_of_deferred, stmt->has_no
 		    NULL != env &&
 		    EN_is_odbc3(env))
 		{
-			int     count;
-			int		status = 0;
+			int	count;
+			int	status = 0;
 
 			if (secure_sscanf(cmd, &status, "UPDATE %d", ARG_INT(&count)) == 1)
 				;

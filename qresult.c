@@ -908,9 +908,9 @@ static SQLLEN enlargeKeyCache(QResultClass *self, SQLLEN add_size, const char *m
 
 SQLLEN	QR_move_cursor_to_last(QResultClass *self, StatementClass *stmt)
 {
-	char			movecmd[64];
+	char		movecmd[64];
 	QResultClass	*res;
-	SQLLEN			moved;
+	SQLLEN		moved;
 	ConnectionClass	*conn = SC_get_conn(stmt);
 
 	if (!QR_get_cursor(self))
@@ -949,7 +949,7 @@ int
 QR_next_tuple(QResultClass *self, StatementClass *stmt)
 {
 	CSTR	func = "QR_next_tuple";
-	int		ret = TRUE;
+	int	ret = TRUE;
 
 	/* Speed up access */
 	SQLLEN		fetch_number = self->fetch_number, cur_fetch = 0;
@@ -962,11 +962,11 @@ QR_next_tuple(QResultClass *self, StatementClass *stmt)
 	QResultClass	*res;
 
 	/* QR_set_command() dups this string so doesn't need static */
-	char			fetch[128];
-	QueryInfo		qi;
+	char		fetch[128];
+	QueryInfo	qi;
 	ConnectionClass	*conn;
-	ConnInfo   		*ci;
-	BOOL			reached_eof_now = FALSE, curr_eof; /* detecting EOF is pretty important */
+	ConnInfo   *ci;
+	BOOL		reached_eof_now = FALSE, curr_eof; /* detecting EOF is pretty important */
 
 MYLOG(DETAIL_LOG_LEVEL, "Oh %p->fetch_number=" FORMAT_LEN "\n", self, self->fetch_number);
 MYLOG(DETAIL_LOG_LEVEL, "in total_read=" FORMAT_ULEN " cursT=" FORMAT_LEN " currT=" FORMAT_LEN " ad=%d total=" FORMAT_ULEN " rowsetSize=%d\n", self->num_total_read, self->cursTuple, stmt->currTuple, self->ad_count, QR_get_num_total_tuples(self), self->rowset_size_include_ommitted);
@@ -1328,19 +1328,19 @@ MYLOG(DETAIL_LOG_LEVEL, "returning %d offset=" FORMAT_LEN "\n", ret, offset);
 static BOOL
 QR_read_tuples_from_pgres(QResultClass *self, PGresult **pgres)
 {
-	Int2			field_lf;
-	int				len;
-	char	   		*value;
-	char	   		*buffer;
-	int				ci_num_fields = QR_NumResultCols(self);	/* speed up access */
-	int				num_fields = self->num_fields;	/* speed up access */
+	Int2		field_lf;
+	int			len;
+	char	   *value;
+	char	   *buffer;
+	int		ci_num_fields = QR_NumResultCols(self);	/* speed up access */
+	int		num_fields = self->num_fields;	/* speed up access */
 	ColumnInfoClass *flds;
-	int				effective_cols;
-	char			tidoidbuf[32];
-	int				rowno;
-	int				nrows;
-	int				resStatus;
-	int				numTotalRows = 0;
+	int		effective_cols;
+	char		tidoidbuf[32];
+	int			rowno;
+	int			nrows;
+	int			resStatus;
+	int		numTotalRows = 0;
 
 	/* set the current row to read the fields into */
 	effective_cols = QR_NumPublicResultCols(self);
